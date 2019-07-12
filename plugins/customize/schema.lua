@@ -1,7 +1,7 @@
 local typedefs = require "kong.db.schema.typedefs"
 
 return {
-  name = "http-log",
+  name = "customize",
   fields = {
     { protocols = typedefs.protocols_http },
     { config = {
