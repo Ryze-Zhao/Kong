@@ -11,11 +11,11 @@ local table_concat = table.concat
 local fmt = string.format
 
 
-local HttpLogHandler = {}
+local Customize = {}
 
 
-HttpLogHandler.PRIORITY = 12
-HttpLogHandler.VERSION = "2.0.0"
+Customize.PRIORITY = 12
+Customize.VERSION = "2.0.0"
 
 
 local queues = {} -- one queue per unique plugin config
@@ -140,7 +140,7 @@ local function get_queue_id(conf)
 end
 
 
-function HttpLogHandler:log(conf)
+function Customize:log(conf)
   local entry = cjson_encode(basic_serializer.serialize(ngx))
 
   local queue_id = get_queue_id(conf)
@@ -174,4 +174,4 @@ function HttpLogHandler:log(conf)
   q:add(entry)
 end
 
-return HttpLogHandler
+return Customize
