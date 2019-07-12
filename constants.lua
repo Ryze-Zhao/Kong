@@ -34,6 +34,8 @@ local plugins = {
   "prometheus",
   "proxy-cache",
 "ht-log",
+--这里添加
+"customize",
 }
 
 local plugin_map = {}
