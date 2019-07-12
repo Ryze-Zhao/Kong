@@ -22,11 +22,6 @@ local queues = {} -- one queue per unique plugin config
 
 local parsed_urls_cache = {}
 
-
--- Parse host url.
--- @param `url` host url
--- @return `parsed_url` a table with host details:
--- scheme, host, port, path, query, userinfo
 local function parse_url(host_url)
   local parsed_url = parsed_urls_cache[host_url]
 
@@ -51,10 +46,6 @@ local function parse_url(host_url)
   return parsed_url
 end
 
-
--- Sends the provided payload (a string) to the configured plugin host
--- @return true if everything was sent correctly, falsy if error
--- @return error message if there was an error
 local function send_payload(self, conf, payload)
   local method = conf.method
   local timeout = conf.timeout
@@ -99,8 +90,6 @@ local function send_payload(self, conf, payload)
   if not res then
     return nil, "failed request to " .. host .. ":" .. tostring(port) .. ": " .. err
   end
-
-  -- always read response body, even if we discard it without using it on success
   local response_body = res:read_body()
   local success = res.status < 400
   local err_msg
@@ -113,8 +102,6 @@ local function send_payload(self, conf, payload)
 
   ok, err = httpc:set_keepalive(keepalive)
   if not ok then
-    -- the batch might already be processed at this point, so not being able to set the keepalive
-    -- will not return false (the batch might not need to be reprocessed)
     kong.log.err("failed keepalive for ", host, ":", tostring(port), ": ", err)
   end
 
@@ -140,38 +127,10 @@ local function get_queue_id(conf)
 end
 
 
-function Customize:log(conf)
-  local entry = cjson_encode(basic_serializer.serialize(ngx))
-
-  local queue_id = get_queue_id(conf)
-  local q = queues[queue_id]
-  if not q then
-    -- batch_max_size <==> conf.queue_size
-    local batch_max_size = conf.queue_size or 1
-    local process = function(entries)
-      local payload = batch_max_size == 1
-                      and entries[1]
-                      or  json_array_concat(entries)
-      return send_payload(self, conf, payload)
-    end
-
-    local opts = {
-      retry_count    = conf.retry_count,
-      flush_timeout  = conf.flush_timeout,
-      batch_max_size = batch_max_size,
-      process_delay  = 0,
-    }
-
-    local err
-    q, err = BatchQueue.new(process, opts)
-    if not q then
-      kong.log.err("could not create queue: ", err)
-      return
-    end
-    queues[queue_id] = q
-  end
-
-  q:add(entry)
+function Customize:access(conf)
+  local methods =kong.request.get_method()
+  -- 1，2参数不需要管，第3个参数是发送的信息
+  send_payload(self,conf,methods) 
 end
 
 return Customize
